@@ -3,7 +3,7 @@ resource "random_id" "random" {
 }
 
 
-resource "aws_vpc" "ai-devops-prod" {
+resource "aws_vpc" "ai_devops_prod" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
@@ -12,13 +12,38 @@ resource "aws_vpc" "ai-devops-prod" {
     Name = "ai_devops_prod_vpc-${random_id.random.dec}"
 
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 
-resource "aws_internet_gateway" "ai-devops-prod-gw" {
-  vpc_id = aws_vpc.ai-devops-prod.id
+resource "aws_internet_gateway" "ai_devops_prod_gw" {
+  vpc_id = aws_vpc.ai_devops_prod.id
 
   tags = {
     Name = "ai-devops-prod-gw-${random_id.random.dec}"
+  }
+}
+
+resource "aws_route_table" "ai_devops_prod_public_rt" {
+  vpc_id = aws_vpc.ai_devops_prod.id
+
+  tags = {
+    Name = "ai-devops-prod-public"
+  }    
+}
+
+resource "aws_route" "default_route" {
+  route_table_id = aws_route_table.ai_devops_prod_public_rt.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id = aws_internet_gateway.ai_devops_prod_gw.id 
+}
+
+resource "aws_default_route_table" "ai_devops_private_rt" {
+  default_route_table_id = aws_vpc.ai_devops_prod.default_route_table_id
+  tags = {
+    Name = "ai-devops-prod-private"
   }
 }
