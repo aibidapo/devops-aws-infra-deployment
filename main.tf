@@ -1,3 +1,11 @@
+locals {
+  azs = data.aws_availability_zones.available.names
+}
+
+locals {
+  account_name = "ai-devops-prod"
+}
+
 data "aws_availability_zones" "available" {}
 
 resource "random_id" "random" {
@@ -11,7 +19,7 @@ resource "aws_vpc" "ai_devops_prod" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "ai_devops_prod_vpc-${random_id.random.dec}"
+    Name = "${local.account_name}-vpc-${random_id.random.dec}"
 
   }
 
@@ -25,7 +33,7 @@ resource "aws_internet_gateway" "ai_devops_prod_gw" {
   vpc_id = aws_vpc.ai_devops_prod.id
 
   tags = {
-    Name = "ai-devops-prod-gw-${random_id.random.dec}"
+    Name = "${local.account_name}-gw-${random_id.random.dec}"
   }
 }
 
@@ -33,7 +41,7 @@ resource "aws_route_table" "ai_devops_prod_public_rt" {
   vpc_id = aws_vpc.ai_devops_prod.id
 
   tags = {
-    Name = "ai-devops-prod-public"
+    Name = "${local.account_name}-public"
   }
 }
 
@@ -43,22 +51,41 @@ resource "aws_route" "default_route" {
   gateway_id             = aws_internet_gateway.ai_devops_prod_gw.id
 }
 
-resource "aws_default_route_table" "ai_devops_private_rt" {
+resource "aws_default_route_table" "ai_devops_prod_private_rt" {
   default_route_table_id = aws_vpc.ai_devops_prod.default_route_table_id
   tags = {
-    Name = "ai-devops-prod-private"
+    Name = "${local.account_name}-private"
   }
 }
 
-resource "aws_subnet" "ai_devops_public_subnet" {
+resource "aws_subnet" "ai_devops_prod_public_subnet" {
   vpc_id                  = aws_vpc.ai_devops_prod.id
-  cidr_block              = var.public_cidrs[count.index]
+  cidr_block              = cidrsubnet(var.vpc_cidr, 8, count.index)
   map_public_ip_on_launch = true
-  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  availability_zone       = local.azs[count.index]
 
-  count = length(var.public_cidrs)
+  count = length(local.azs)
 
   tags = {
-    Name = "ai-devops-prod-public-${count.index + 1}"
+    Name = "${local.account_name}-public-${count.index + 1}"
   }
+}
+
+resource "aws_subnet" "ai_devops_prod_private_subnet" {
+  vpc_id                  = aws_vpc.ai_devops_prod.id
+  cidr_block              = cidrsubnet(var.vpc_cidr, 8, length(local.azs) + count.index)
+  map_public_ip_on_launch = false
+  availability_zone       = local.azs[count.index]
+
+  count = length(local.azs)
+
+  tags = {
+    Name = "${local.account_name}-private-${count.index + 1}"
+  }
+}
+
+resource "aws_route_table_association" "ai_devops_prod_public_assoc" {
+  count          = length(local.azs)
+  subnet_id      = aws_subnet.ai_devops_prod_public_subnet[count.index].id
+  route_table_id = aws_route_table.ai_devops_prod_public_rt.id
 }
