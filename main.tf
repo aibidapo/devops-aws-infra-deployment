@@ -1,3 +1,5 @@
+data "aws_availability_zones" "available" {}
+
 resource "random_id" "random" {
   byte_length = 2
 }
@@ -32,18 +34,31 @@ resource "aws_route_table" "ai_devops_prod_public_rt" {
 
   tags = {
     Name = "ai-devops-prod-public"
-  }    
+  }
 }
 
 resource "aws_route" "default_route" {
-  route_table_id = aws_route_table.ai_devops_prod_public_rt.id
+  route_table_id         = aws_route_table.ai_devops_prod_public_rt.id
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id = aws_internet_gateway.ai_devops_prod_gw.id 
+  gateway_id             = aws_internet_gateway.ai_devops_prod_gw.id
 }
 
 resource "aws_default_route_table" "ai_devops_private_rt" {
   default_route_table_id = aws_vpc.ai_devops_prod.default_route_table_id
   tags = {
     Name = "ai-devops-prod-private"
+  }
+}
+
+resource "aws_subnet" "ai_devops_public_subnet" {
+  vpc_id                  = aws_vpc.ai_devops_prod.id
+  cidr_block              = var.public_cidrs[count.index]
+  map_public_ip_on_launch = true
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
+
+  count = length(var.public_cidrs)
+
+  tags = {
+    Name = "ai-devops-prod-public-${count.index + 1}"
   }
 }
