@@ -4,12 +4,25 @@ variable "vpc_cidr" {
   default     = "10.124.0.0/16"
 }
 
-variable "public_cidrs" {
-  type    = list(string)
-  default = ["10.124.1.0/24", "10.124.3.0/24"]
+variable "access_ip" {
+  type        = string
+  default     = "85.237.194.6/32"
+  description = "This is the public IP address of the pc used to access your AWS account"
+  # Note that your public address might change from time to time.
 }
 
-variable "private_cidrs" {
-  type    = list(string)
-  default = ["10.124.2.0/24", "10.124.4.0/24"]
+variable "main_instance_type" {
+  type        = string
+  description = "EC2 Instance type"
+  default     = "t2.micro"
+}
+
+variable "main_vol_size" {
+  type    = number
+  default = 8
+}
+
+variable "main_instance_count" {
+  type    = number
+  default = 1
 }

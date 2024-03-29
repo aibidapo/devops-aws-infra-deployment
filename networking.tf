@@ -13,7 +13,7 @@ resource "random_id" "random" {
 }
 
 
-resource "aws_vpc" "ai_devops_prod" {
+resource "aws_vpc" "ai_devops_prod_vpc" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
@@ -30,7 +30,7 @@ resource "aws_vpc" "ai_devops_prod" {
 
 
 resource "aws_internet_gateway" "ai_devops_prod_gw" {
-  vpc_id = aws_vpc.ai_devops_prod.id
+  vpc_id = aws_vpc.ai_devops_prod_vpc.id
 
   tags = {
     Name = "${local.account_name}-gw-${random_id.random.dec}"
@@ -38,7 +38,7 @@ resource "aws_internet_gateway" "ai_devops_prod_gw" {
 }
 
 resource "aws_route_table" "ai_devops_prod_public_rt" {
-  vpc_id = aws_vpc.ai_devops_prod.id
+  vpc_id = aws_vpc.ai_devops_prod_vpc.id
 
   tags = {
     Name = "${local.account_name}-public"
@@ -52,14 +52,14 @@ resource "aws_route" "default_route" {
 }
 
 resource "aws_default_route_table" "ai_devops_prod_private_rt" {
-  default_route_table_id = aws_vpc.ai_devops_prod.default_route_table_id
+  default_route_table_id = aws_vpc.ai_devops_prod_vpc.default_route_table_id
   tags = {
     Name = "${local.account_name}-private"
   }
 }
 
 resource "aws_subnet" "ai_devops_prod_public_subnet" {
-  vpc_id                  = aws_vpc.ai_devops_prod.id
+  vpc_id                  = aws_vpc.ai_devops_prod_vpc.id
   cidr_block              = cidrsubnet(var.vpc_cidr, 8, count.index)
   map_public_ip_on_launch = true
   availability_zone       = local.azs[count.index]
@@ -72,7 +72,7 @@ resource "aws_subnet" "ai_devops_prod_public_subnet" {
 }
 
 resource "aws_subnet" "ai_devops_prod_private_subnet" {
-  vpc_id                  = aws_vpc.ai_devops_prod.id
+  vpc_id                  = aws_vpc.ai_devops_prod_vpc.id
   cidr_block              = cidrsubnet(var.vpc_cidr, 8, length(local.azs) + count.index)
   map_public_ip_on_launch = false
   availability_zone       = local.azs[count.index]
@@ -88,4 +88,28 @@ resource "aws_route_table_association" "ai_devops_prod_public_assoc" {
   count          = length(local.azs)
   subnet_id      = aws_subnet.ai_devops_prod_public_subnet[count.index].id
   route_table_id = aws_route_table.ai_devops_prod_public_rt.id
+}
+
+resource "aws_security_group" "ai_devops_prod_sg" {
+  name        = "public_sg"
+  description = "Security group for public instances"
+  vpc_id      = aws_vpc.ai_devops_prod_vpc.id
+}
+
+resource "aws_security_group_rule" "ingress_all" {
+  type              = "ingress"
+  from_port         = 0
+  to_port           = 65535
+  protocol          = "-1"
+  cidr_blocks       = [var.access_ip]
+  security_group_id = aws_security_group.ai_devops_prod_sg.id
+}
+
+resource "aws_security_group_rule" "egress_all" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 65535
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.ai_devops_prod_sg.id
 }
