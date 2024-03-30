@@ -18,12 +18,12 @@ resource "aws_instance" "ai_devops_prod_main" {
 
   count = var.main_instance_count
 
-  instance_type = var.main_instance_type
-  ami           = data.aws_ami.server_ami.id
-  key_name = aws_key_pair.ai_devops_prod_auth.id
+  instance_type          = var.main_instance_type
+  ami                    = data.aws_ami.server_ami.id
+  key_name               = aws_key_pair.ai_devops_prod_auth.id
   vpc_security_group_ids = [aws_security_group.ai_devops_prod_sg.id]
   subnet_id              = aws_subnet.ai_devops_prod_public_subnet[count.index].id
-  user_data = templatefile("./main-userdata.tpl", {new_hostname = "${local.account_name}-main-${random_id.ai_devops_prod_node_id[count.index].dec}"})
+  user_data              = templatefile("./main-userdata.tpl", { new_hostname = "${local.account_name}-main-${random_id.ai_devops_prod_node_id[count.index].dec}" })
   root_block_device {
     volume_size = var.main_vol_size
   }
@@ -36,6 +36,27 @@ resource "aws_instance" "ai_devops_prod_main" {
     command = "printf '\n${self.public_ip}' >> aws_hosts"
   }
 
+  provisioner "local-exec" {
+    when    = destroy
+    command = "sed -i '/^[0-9]/d' aws_hosts"
+  }
+
+}
+
+resource "terraform_data" "grafana_update" {
+  count      = var.main_instance_count
+  depends_on = [aws_instance.ai_devops_prod_main]
+
+  provisioner "remote-exec" {
+    inline = ["sudo apt upgrade -y grafana && touch upgrade.log && echo 'I updated Grafana' >> upgrade.log"]
+
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file("~/.ssh/ai-devops-prod_key")
+      host        = aws_instance.ai_devops_prod_main[count.index].public_ip
+    }
+  }
 }
 
 resource "aws_key_pair" "ai_devops_prod_auth" {
