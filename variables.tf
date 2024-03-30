@@ -6,7 +6,7 @@ variable "vpc_cidr" {
 
 variable "access_ip" {
   type        = string
-  default     = "85.237.194.6/32"
+  default     = "85.237.194.0/24"
   description = "This is the public IP address of the pc used to access your AWS account"
   # Note that your public address might change from time to time.
 }
@@ -25,4 +25,14 @@ variable "main_vol_size" {
 variable "main_instance_count" {
   type    = number
   default = 1
+}
+
+variable "key_name" {
+  type = string
+  # default = "value" <-- Defined in terraform.tfvars
+}
+
+variable "public_key_path" {
+  type = string
+  # default = <-- Defined in terraform.tfvars
 }
