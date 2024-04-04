@@ -13,6 +13,10 @@ resource "random_id" "ai_devops_prod_node_id" {
   count       = var.main_instance_count
 }
 
+resource "aws_key_pair" "ai_devops_prod_auth" {
+  key_name   = var.key_name
+  public_key = file(var.public_key_path)
+}
 
 resource "aws_instance" "ai_devops_prod_main" {
 
@@ -23,7 +27,7 @@ resource "aws_instance" "ai_devops_prod_main" {
   key_name               = aws_key_pair.ai_devops_prod_auth.id
   vpc_security_group_ids = [aws_security_group.ai_devops_prod_sg.id]
   subnet_id              = aws_subnet.ai_devops_prod_public_subnet[count.index].id
-  user_data              = templatefile("./main-userdata.tpl", { new_hostname = "${local.account_name}-main-${random_id.ai_devops_prod_node_id[count.index].dec}" })
+  # user_data              = templatefile("./main-userdata.tpl", { new_hostname = "${local.account_name}-main-${random_id.ai_devops_prod_node_id[count.index].dec}" })
   root_block_device {
     volume_size = var.main_vol_size
   }
@@ -33,8 +37,9 @@ resource "aws_instance" "ai_devops_prod_main" {
   }
 
   provisioner "local-exec" {
-    command = "printf '\n${self.public_ip}' >> aws_hosts"
+    command = "printf '\n${self.public_ip}' >> aws_hosts && aws ec2 wait instance-status-ok --instance-ids ${self.id} --region us-east-1 --profile iamadmin-prod"
   }
+
 
   provisioner "local-exec" {
     when    = destroy
@@ -42,7 +47,7 @@ resource "aws_instance" "ai_devops_prod_main" {
   }
 
 }
-
+/*
 resource "terraform_data" "grafana_update" {
   count      = var.main_instance_count
   depends_on = [aws_instance.ai_devops_prod_main]
@@ -58,9 +63,19 @@ resource "terraform_data" "grafana_update" {
     }
   }
 }
+*/
 
-resource "aws_key_pair" "ai_devops_prod_auth" {
-  key_name   = var.key_name
-  public_key = file(var.public_key_path)
+
+
+
+resource "terraform_data" "grafana_install" {
+
+  depends_on = [aws_instance.ai_devops_prod_main]
+  provisioner "local-exec" {
+    command = "ansible-playbook -i aws_hosts --key-file ~/.ssh/ai-devops-prod_key Ansible/Playbooks/grafana-apt-install.yml"
+  }
 }
 
+output "grafana_access" {
+  value = { for i in aws_instance.ai_devops_prod_main[*] : i.tags.Name => "${i.public_ip}:3000" }
+}
