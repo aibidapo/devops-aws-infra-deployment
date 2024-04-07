@@ -72,7 +72,7 @@ resource "terraform_data" "grafana_install" {
 
   depends_on = [aws_instance.ai_devops_prod_main]
   provisioner "local-exec" {
-    command = "ansible-playbook -i aws_hosts --key-file ~/.ssh/ai-devops-prod_key Ansible/Playbooks/grafana-apt-install.yml"
+    command = "ansible-playbook -i aws_hosts --key-file ~/.ssh/ai-devops-prod-key ../Ansible/Playbooks/main-playbook.yml"
   }
 }
 
