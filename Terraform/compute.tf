@@ -37,7 +37,7 @@ resource "aws_instance" "ai_devops_prod_main" {
   }
 
   provisioner "local-exec" {
-    command = "printf '\n${self.public_ip}' >> aws_hosts && aws ec2 wait instance-status-ok --instance-ids ${self.id} --region us-east-1 --profile iamadmin-prod"
+    command = "printf '\n${self.public_ip}' >> aws_hosts && aws ec2 wait instance-status-ok --instance-ids ${self.id} --region us-east-1"
   }
 
 

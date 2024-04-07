@@ -39,5 +39,6 @@ variable "key_name" {
 
 variable "public_key_path" {
   type = string
-  # default = <-- Defined in terraform.tfvars
+  default = "~/.ssh/ai-devops-prod-key.pub"
+  # <-- Defined in terraform.tfvars
 }
