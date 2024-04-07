@@ -6,9 +6,10 @@ variable "vpc_cidr" {
 
 variable "cloud9_ip" {
   type = string
-  default = "34.235.155.214/32"
-  description = "This is the public IP address of the pc used to access your AWS account"
-  # Note that your public address might change from time to time.  
+  default = "52.4.17.237/32"
+  description = "This is the elastic IP address of the cloud9 instance"
+  # Note that your public address might change from time to time. 
+  # You can make this the public IP of your pc used to access the cloud.
 }
 variable "access_ip" {
   type        = string
