@@ -79,3 +79,8 @@ resource "terraform_data" "grafana_install" {
 output "grafana_access" {
   value = { for i in aws_instance.ai_devops_prod_main[*] : i.tags.Name => "${i.public_ip}:3000" }
 }
+
+
+output "prometheus_access" {
+  value = { for i in aws_instance.ai_devops_prod_main[*] : i.tags.Name => "${i.public_ip}:9090" }
+}
