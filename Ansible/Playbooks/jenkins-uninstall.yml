@@ -1,30 +1,31 @@
+---
 - name: Uninstall Jenkins
   hosts: localhost
-  become: yes
-
+  become: true
   tasks:
     - name: Stop Jenkins service
-      ansible.builtin.service:
+      systemd:
         name: jenkins
         state: stopped
         enabled: no
+      ignore_errors: true
 
     - name: Remove Jenkins package
-      ansible.builtin.apt:
+      apt:
         name: jenkins
         state: absent
 
     - name: Remove Jenkins repository from sources.list
-      ansible.builtin.lineinfile:
-        path: /etc/apt/sources.list
+      apt_repository:
+        repo: deb https://pkg.jenkins.io/debian-stable binary/
         state: absent
-        regexp: '^deb https://pkg.jenkins.io/debian-stable binary/'
-      
+
     - name: Remove Jenkins apt key
-      ansible.builtin.apt_key:
-        # id: "enter the appropriate ID"
+      apt_key:
+        keyserver: keyserver.ubuntu.com
+        id: 9B7D32F2D50582E6
         state: absent
 
     - name: Clean up apt cache
-      ansible.builtin.apt:
+      apt:
         autoclean: yes
