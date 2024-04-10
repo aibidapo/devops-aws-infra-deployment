@@ -1,51 +1,34 @@
 ---
 - name: Bootstrap Main Node
   hosts: main
-  # remote_user: ubuntu
+  remote_user: ubuntu
   become: yes
   vars:
     listen_address: 0.0.0.0
     listen_port: 9090
   
   tasks:
-  - name: Install prerequisite packages
-    apt:
-      name: "{{ item }}"
+  - name: download apt key
+    ansible.builtin.apt_key:
+      url: https://packages.grafana.com/gpg.key
       state: present
-    loop:
-      - apt-transport-https
-      - software-properties-common
-      - wget
 
-  - name: Import GPG key
-    become: yes
-    shell: |
-      sudo mkdir -p /etc/apt/keyrings/
-      wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null
+  - name: Add Grafana repo to sources.list
+    ansible.builtin.apt_repository:
+      repo: deb https://packages.grafana.com/oss/deb stable main
+      filename: grafana
+      state: present
 
-  - name: Add repository for stable releases
-    become: yes
-    lineinfile:
-      dest: /etc/apt/sources.list.d/grafana.list
-      line: "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main"
-
-  - name: Update package list
-    become: yes
-    apt:
+  - name: Update apt cache and install Grafana
+    ansible.builtin.apt:
+      name: grafana
       update_cache: yes
-
-  - name: Install Grafana Enterprise
-    become: yes
-    apt:
-      name: grafana-enterprise
-      state: present
-
-  - name: Ensure Grafana service is enabled and started
-    become: yes
-    service:
+      
+  - name: Ensure Grafana is started and enabled
+    ansible.builtin.systemd:
       name: grafana-server
-      state: started
       enabled: yes
+      state: started
 
   - name: Download Prometheus
     ansible.builtin.get_url:

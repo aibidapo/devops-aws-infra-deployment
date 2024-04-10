@@ -5,15 +5,15 @@ variable "vpc_cidr" {
 }
 
 variable "cloud9_ip" {
-  type = string
-  default = "52.20.20.74/32"
+  type        = string
+  default     = "52.20.20.74/32"
   description = "This is the elastic IP address of the cloud9 instance"
   # Note that your public address might change from time to time. 
   # You can make this the public IP of your pc used to access the cloud.
 }
 variable "access_ip" {
-  type        = string
-  default     = "0.0.0.0/0"
+  type    = string
+  default = "0.0.0.0/0"
 
 }
 
@@ -34,13 +34,13 @@ variable "main_instance_count" {
 }
 
 variable "key_name" {
-  type = string
+  type    = string
   default = "~/.ssh/ai-devops-prod-key"
   # default = "value" <-- Defined in terraform.tfvars
 }
 
 variable "public_key_path" {
-  type = string
+  type    = string
   default = "~/.ssh/ai-devops-prod-key.pub"
   # <-- Defined in terraform.tfvars
 }
