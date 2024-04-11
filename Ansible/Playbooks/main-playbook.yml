@@ -18,27 +18,26 @@
       - wget
 
   - name: Import GPG key
-    become: yes
     shell: |
       sudo mkdir -p /etc/apt/keyrings/
       wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null
+    args:
+      executable: /bin/bash
 
-  - name: Add repository for stable releases
-    become: yes
-    lineinfile:
-      dest: /etc/apt/sources.list.d/grafana.list
-      line: "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main"
+  - name: Add stable repository
+    apt_repository:
+      repo: "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main"
+      state: present
 
-  - name: Update package list
-    become: yes
+  - name: Update apt cache after adding repository
     apt:
       update_cache: yes
 
-  - name: Install Grafana Enterprise
-    become: yes
+  - name: Install Grafana
     apt:
       name: grafana-enterprise
       state: present
+    become: yes
 
   - name: Ensure Grafana service is enabled and started
     become: yes
