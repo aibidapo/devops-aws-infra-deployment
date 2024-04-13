@@ -33,6 +33,10 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+# Ansible
 *.retry
+
+# Misc
+*.pem
 
 
